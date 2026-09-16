@@ -31,4 +31,18 @@ defmodule NervesPrinter.ApplicationTest do
 
     assert opts[:printer_id] == Nerves.Runtime.serial_number()
   end
+
+  describe "status_led_children/2" do
+    test "starts nothing on the host" do
+      assert Application.status_led_children(:host, uri: "wss://relay.test/ws") == []
+    end
+
+    test "starts the LED on the device, tracking the relay when one is configured" do
+      assert Application.status_led_children(:custom_rpi3, uri: "wss://relay.test/ws") ==
+               [{NervesPrinter.StatusLed, relay?: true}]
+
+      assert Application.status_led_children(:custom_rpi3, []) ==
+               [{NervesPrinter.StatusLed, relay?: false}]
+    end
+  end
 end

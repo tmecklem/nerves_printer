@@ -5,18 +5,35 @@ defmodule NervesPrinter.Application do
 
   use Application
 
+  # Mix isn't available at runtime on the device.
+  @target Mix.target()
+
   @impl true
   def start(_type, _args) do
+    relay_config = Application.get_env(:nerves_printer, PrinterRelay.Client, [])
+
+    # The LED starts before the relay client so it sees the first join.
     children =
       [
         NervesPrinter.Printer,
         NervesPrinter.PrinterWatcher
-      ] ++ relay_children(Application.get_env(:nerves_printer, PrinterRelay.Client, []))
+      ] ++
+        status_led_children(@target, relay_config) ++
+        relay_children(relay_config)
 
     # See https://elixir.hexdocs.pm/Supervisor.html
     # for other strategies and supported options
     opts = [strategy: :one_for_one, name: NervesPrinter.Supervisor]
     Supervisor.start_link(children, opts)
+  end
+
+  @doc """
+  The status LED child, started only on the device.
+  """
+  def status_led_children(:host, _relay_config), do: []
+
+  def status_led_children(_target, relay_config) do
+    [{NervesPrinter.StatusLed, relay?: relay_config[:uri] != nil}]
   end
 
   @doc """
