@@ -12,11 +12,16 @@ defmodule PrinterRelay.MixProject do
       elixirc_paths: elixirc_paths(Mix.env()),
       start_permanent: Mix.env() == :prod,
       deps: deps(),
+      aliases: aliases(),
       description:
         "Send ZPL from a Phoenix app to label printers connected over Phoenix Channels",
       package: package(),
       docs: [main: "readme", extras: ["README.md"], source_url: @source_url]
     ]
+  end
+
+  def cli do
+    [preferred_envs: [precommit: :test]]
   end
 
   def application do
@@ -25,6 +30,12 @@ defmodule PrinterRelay.MixProject do
 
   defp elixirc_paths(:test), do: ["lib", "test/support"]
   defp elixirc_paths(_), do: ["lib"]
+
+  defp aliases do
+    [
+      precommit: ["format --check-formatted", "compile --warnings-as-errors", "test"]
+    ]
+  end
 
   defp deps do
     [

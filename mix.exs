@@ -14,6 +14,7 @@ defmodule NervesPrinter.MixProject do
       listeners: listeners(Mix.target(), Mix.env()),
       start_permanent: Mix.env() == :prod,
       deps: deps(),
+      aliases: aliases(),
       releases: [{@app, release()}]
     ]
   end
@@ -27,7 +28,10 @@ defmodule NervesPrinter.MixProject do
   end
 
   def cli do
-    [preferred_targets: [run: :host, test: :host]]
+    [
+      preferred_targets: [run: :host, test: :host, precommit: :host],
+      preferred_envs: [precommit: :test]
+    ]
   end
 
   # Run "mix help deps" to learn about dependencies.
@@ -66,6 +70,17 @@ defmodule NervesPrinter.MixProject do
       include_erts: &Nerves.Release.erts/0,
       steps: [&Nerves.Release.init/1, :assemble],
       strip_beams: Mix.env() == :prod or [keep: ["Docs"]]
+    ]
+  end
+
+  defp aliases do
+    [
+      precommit: [
+        "format --check-formatted",
+        "compile --warnings-as-errors",
+        "test",
+        "cmd --cd printer_relay mix precommit"
+      ]
     ]
   end
 
