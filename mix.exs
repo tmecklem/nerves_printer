@@ -3,7 +3,7 @@ defmodule NervesPrinter.MixProject do
 
   @app :nerves_printer
   @version "0.1.0"
-  @all_targets [:custom_rpi3]
+  @all_targets [:printer_relay_rpi3]
 
   def project do
     [
@@ -55,9 +55,13 @@ defmodule NervesPrinter.MixProject do
       {:nerves_pack, "~> 0.7.1", targets: @all_targets},
 
       # Dependencies for specific targets
-      # nerves_system_rpi3 fork with CONFIG_USB_PRINTER=y (see PLAN.md). The
-      # system is built locally, so its artifact lives in ~/.nerves/artifacts.
-      {:custom_rpi3, path: "../custom_rpi3", runtime: false, targets: :custom_rpi3}
+      # nerves_system_rpi3 fork with CONFIG_USB_PRINTER=y (see PLAN.md). Its CI
+      # publishes the prebuilt system to the GitHub release for this tag.
+      {:printer_relay_rpi3,
+       github: "tmecklem/printer_relay_rpi3",
+       tag: "v2.1.2-usblp.1",
+       runtime: false,
+       targets: :printer_relay_rpi3}
     ]
   end
 

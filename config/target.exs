@@ -31,21 +31,31 @@ config :nerves, :erlinit, update_clock: true
 # * See https://nerves-ssh.hexdocs.pm/readme.html for general SSH configuration
 # * See https://ssh-subsystem-fwup.hexdocs.pm/readme.html for firmware updates
 
+# Keys come from ~/.ssh and from NERVES_SSH_AUTHORIZED_KEYS (one key per
+# line), which is how CI builds get them.
 keys =
-  System.user_home!()
-  |> Path.join(".ssh/id_{rsa,ecdsa,ed25519}.pub")
-  |> Path.wildcard()
+  System.get_env("NERVES_SSH_AUTHORIZED_KEYS", "")
+  |> String.split("\n", trim: true)
+  |> Enum.map(&String.trim/1)
+  |> Enum.reject(&(&1 == ""))
+  |> Enum.concat(
+    System.user_home!()
+    |> Path.join(".ssh/id_{rsa,ecdsa,ed25519}.pub")
+    |> Path.wildcard()
+    |> Enum.map(&(&1 |> File.read!() |> String.trim()))
+  )
+  |> Enum.uniq()
 
 if keys == [],
   do:
     Mix.raise("""
-    No SSH public keys found in ~/.ssh. An ssh authorized key is needed to
-    log into the Nerves device and update firmware on it using ssh.
-    See your project's config.exs for this error message.
+    No SSH public keys found in ~/.ssh or NERVES_SSH_AUTHORIZED_KEYS. An ssh
+    authorized key is needed to log into the Nerves device and update firmware
+    on it using ssh.
     """)
 
 config :nerves_ssh,
-  authorized_keys: Enum.map(keys, &File.read!/1)
+  authorized_keys: keys
 
 # Configure the network using vintage_net
 #

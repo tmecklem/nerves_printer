@@ -45,7 +45,7 @@ git checkout -b <suggested_branch_name>
 
 If the branch already exists locally, check it out and `git pull --ff-only` if there's a remote. If the branch already has unrelated commits, stop and ask the user how to proceed.
 
-Cards here often span repos (`custom_rpi3`, `equipment_tracker`). Use the same branch name in every repo the card touches, and follow that repo's own conventions (equipment_tracker has its own `CLAUDE.md` and `mix precommit`).
+Cards here often span repos (`printer_relay_rpi3`, `equipment_tracker`). Use the same branch name in every repo the card touches, and follow that repo's own conventions (equipment_tracker has its own `CLAUDE.md` and `mix precommit`).
 
 ### 3. Move the card to Development and assign yourself
 
@@ -100,11 +100,11 @@ After research, ask the user any questions you still have about scope, behavior,
 
 If `mix precommit` fails, fix it before proceeding. Never accumulate broken state.
 
-When a change touches firmware code or config, also confirm the target build: `MIX_TARGET=custom_rpi3 mix compile --warnings-as-errors`, and `mix firmware` when config or dependencies change.
+When a change touches firmware code or config, also confirm the target build: `MIX_TARGET=printer_relay_rpi3 mix compile --warnings-as-errors`, and `mix firmware` when config or dependencies change.
 
 ### 8. Verify on hardware when the change reaches the device
 
-If the Pi is reachable (`ssh nerves.local`), deploy with `MIX_TARGET=custom_rpi3 mix firmware && mix upload nerves.local` and check the behavior on the device. Build with the same `PRINTER_RELAY_*` settings the Pi already uses, or it will stop connecting to the relay.
+If the Pi is reachable (`ssh nerves.local`), deploy with `MIX_TARGET=printer_relay_rpi3 mix firmware && mix upload nerves.local` and check the behavior on the device. Relay settings imported from the SD card (`/data/printer_relay.conf`) survive updates; a Pi without them only connects if the build sets `PRINTER_RELAY_*`.
 
 - WiFi is persisted on the device, so firmware builds don't need `NERVES_WIFI_*`. Never upload firmware that could leave the Pi without network access.
 - Don't claim hardware verification you didn't do. If the Pi or printer isn't available, say so and list the manual checks in the PR.

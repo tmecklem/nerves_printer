@@ -38,10 +38,10 @@ defmodule NervesPrinter.ApplicationTest do
     end
 
     test "starts the LED on the device, tracking the relay when one is configured" do
-      assert Application.status_led_children(:custom_rpi3, uri: "wss://relay.test/ws") ==
+      assert Application.status_led_children(:printer_relay_rpi3, uri: "wss://relay.test/ws") ==
                [{NervesPrinter.StatusLed, relay?: true}]
 
-      assert Application.status_led_children(:custom_rpi3, []) ==
+      assert Application.status_led_children(:printer_relay_rpi3, []) ==
                [{NervesPrinter.StatusLed, relay?: false}]
     end
   end
