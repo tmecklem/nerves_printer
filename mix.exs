@@ -38,7 +38,10 @@ defmodule NervesPrinter.MixProject do
       {:shoehorn, "~> 0.9.1"},
       {:ring_logger, "~> 0.11.0"},
       {:toolshed, "~> 0.5.0"},
+      {:printer_relay, path: "printer_relay"},
       {:slipstream, "~> 1.2"},
+      # CA certificates for wss:// connections
+      {:castore, "~> 1.0"},
 
       # Allow Nerves.Runtime on host to support development, testing and CI.
       # See config/host.exs for usage.

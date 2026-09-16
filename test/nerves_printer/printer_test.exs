@@ -45,10 +45,10 @@ defmodule NervesPrinter.PrinterTest do
     assert Printer.subscribe(printer) == %{online: false, model: nil}
 
     Printer.attached(printer)
-    assert_receive {:printer_status, %{online: true, model: "ZP 505"}}
+    assert_receive {:printer_relay_status, %{online: true, model: "ZP 505"}}
 
     Printer.detached(printer)
-    assert_receive {:printer_status, %{online: false, model: nil}}
+    assert_receive {:printer_relay_status, %{online: false, model: nil}}
   end
 
   test "returns write errors", %{printer: printer, tmp_dir: tmp_dir} do

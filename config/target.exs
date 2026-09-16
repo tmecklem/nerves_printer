@@ -87,6 +87,19 @@ config :vintage_net,
     {"wlan0", wifi_config}
   ]
 
+# Connect to a PrinterRelay server when a URL is given at build time:
+#
+#     PRINTER_RELAY_URL=wss://example.com/printer_relay/websocket \
+#     PRINTER_RELAY_TOKEN=... PRINTER_RELAY_PRINTER_ID=shop-1 mix firmware
+#
+# The printer id defaults to the device serial number.
+if relay_url = System.get_env("PRINTER_RELAY_URL") do
+  config :nerves_printer, PrinterRelay.Client,
+    uri: relay_url,
+    token: System.fetch_env!("PRINTER_RELAY_TOKEN"),
+    printer_id: System.get_env("PRINTER_RELAY_PRINTER_ID")
+end
+
 config :mdns_lite,
   # The `hosts` key specifies what hostnames mdns_lite advertises.  `:hostname`
   # advertises the device's hostname.local. For the official Nerves systems, this
