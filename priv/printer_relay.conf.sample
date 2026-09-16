@@ -1,0 +1,34 @@
+# Printer settings for the label printer Pi
+#
+# To configure the Pi:
+#   1. Copy this file to printer_relay.conf (same folder, no .sample).
+#   2. Fill in the settings below and save.
+#   3. Put the SD card back in the Pi and power it on.
+#
+# On boot the Pi imports printer_relay.conf, keeps the settings on its data
+# partition (they survive firmware updates), and deletes the file from this
+# card. Drop in a new printer_relay.conf any time to replace the settings.
+#
+# If the file has a mistake, the Pi leaves it here and writes
+# printer_relay.conf.error.txt explaining what to fix.
+#
+# Leave a setting blank to leave it unset. Settings are one per line as
+# setting=value; lines starting with # are ignored.
+
+# WiFi (2.4 GHz). Leave blank to keep the WiFi the Pi already uses.
+# The passphrase must be 8 to 63 characters; leave it blank for an open network.
+wifi_ssid=
+wifi_passphrase=
+
+# Optional second network, used when the first isn't in range.
+wifi_ssid_2=
+wifi_passphrase_2=
+
+# Server connection, from the Phoenix app's PRINTER_RELAY_TOKENS setting.
+# Example: wss://example.com/printer_relay/websocket
+relay_url=
+relay_token=
+
+# Printer name the server knows this Pi by. Must match the name paired with
+# relay_token on the server. Leave blank to use the Pi's serial number.
+printer_id=

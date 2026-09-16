@@ -38,11 +38,25 @@ defmodule NervesPrinter.ApplicationTest do
     end
 
     test "starts the LED on the device, tracking the relay when one is configured" do
-      assert Application.status_led_children(:custom_rpi3, uri: "wss://relay.test/ws") ==
+      assert Application.status_led_children(:printer_relay_rpi3, uri: "wss://relay.test/ws") ==
                [{NervesPrinter.StatusLed, relay?: true}]
 
-      assert Application.status_led_children(:custom_rpi3, []) ==
+      assert Application.status_led_children(:printer_relay_rpi3, []) ==
                [{NervesPrinter.StatusLed, relay?: false}]
+    end
+  end
+
+  describe "relay_config/2" do
+    @build_time [uri: "ws://build/ws", token: "build"]
+    @imported [uri: "wss://imported/ws", token: "imported", printer_id: "shop-1"]
+
+    test "prefers settings imported onto the device" do
+      assert Application.relay_config(@imported, @build_time) == @imported
+    end
+
+    test "falls back to build-time settings" do
+      assert Application.relay_config(nil, @build_time) == @build_time
+      assert Application.relay_config(nil, []) == []
     end
   end
 end

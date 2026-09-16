@@ -52,13 +52,13 @@ interface is bidirectional).
 
 1. Clone the tagged release, not `main`:
    ```
-   git clone https://github.com/nerves-project/nerves_system_rpi3.git custom_rpi3 -b v2.1.2
-   cd custom_rpi3
+   git clone https://github.com/nerves-project/nerves_system_rpi3.git printer_relay_rpi3 -b v2.1.2
+   cd printer_relay_rpi3
    git remote rename origin upstream
-   git remote add origin git@github.com:tmecklem/custom_rpi3.git
+   git remote add origin git@github.com:tmecklem/printer_relay_rpi3.git
    git checkout -b main
    ```
-   The GitHub repo must be named `custom_rpi3` because CI derives the artifact
+   The GitHub repo must be named `printer_relay_rpi3` because CI derives the artifact
    name from the repo name (`mix nerves.artifact ${GITHUB_REPOSITORY#*/}`).
 
 2. `linux-6.18.defconfig`: add next to `CONFIG_USB_STORAGE=y` (around line 262):
@@ -72,7 +72,7 @@ interface is bidirectional).
 3. `mix.exs`: change three things only.
    - `defmodule NervesSystemRpi3.MixProject` to `defmodule CustomRpi3.MixProject`
    - `@github_organization "nerves-project"` to `"tmecklem"`
-   - `@app :nerves_system_rpi3` to `:custom_rpi3`
+   - `@app :nerves_system_rpi3` to `:printer_relay_rpi3`
 
 4. `VERSION`: bump (for example `2.1.2-usblp.1`). `CHANGELOG.md`: add a
    `## v2.1.2-usblp.1` heading; the deploy step greps release notes from it.
@@ -89,7 +89,7 @@ interface is bidirectional).
    git tag v2.1.2-usblp.1 && git push origin main --tags
    ```
    CI builds (roughly an hour) and creates a **draft** release with
-   `custom_rpi3-portable-<version>-<checksum>.tar.gz`. Publish the draft;
+   `printer_relay_rpi3-portable-<version>-<checksum>.tar.gz`. Publish the draft;
    the Nerves artifact resolver only sees published releases.
 
 Keeping up with upstream later: `git fetch upstream && git merge upstream/main`.
@@ -103,11 +103,11 @@ mix nerves.new nerves_printer --target rpi3
 `mix.exs` system dep, replacing the stock rpi3 entry:
 
 ```elixir
-{:custom_rpi3, github: "tmecklem/custom_rpi3", tag: "v2.1.2-usblp.1",
- runtime: false, targets: :custom_rpi3}
+{:printer_relay_rpi3, github: "tmecklem/printer_relay_rpi3", tag: "v2.1.2-usblp.1",
+ runtime: false, targets: :printer_relay_rpi3}
 ```
 
-and add `:custom_rpi3` to `@all_targets`. Build with `MIX_TARGET=custom_rpi3`.
+and add `:printer_relay_rpi3` to `@all_targets`. Build with `MIX_TARGET=printer_relay_rpi3`.
 `mix deps.get` downloads the prebuilt artifact from the GitHub release.
 
 Suggested dependencies:

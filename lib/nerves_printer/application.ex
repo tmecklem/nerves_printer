@@ -10,7 +10,11 @@ defmodule NervesPrinter.Application do
 
   @impl true
   def start(_type, _args) do
-    relay_config = Application.get_env(:nerves_printer, PrinterRelay.Client, [])
+    relay_config =
+      relay_config(
+        imported_relay_config(),
+        Application.get_env(:nerves_printer, PrinterRelay.Client, [])
+      )
 
     # The LED starts before the relay client so it sees the first join.
     children =
@@ -25,6 +29,23 @@ defmodule NervesPrinter.Application do
     # for other strategies and supported options
     opts = [strategy: :one_for_one, name: NervesPrinter.Supervisor]
     Supervisor.start_link(children, opts)
+  end
+
+  @doc """
+  Relay settings imported from the SD card take precedence over ones built
+  into the firmware.
+  """
+  def relay_config(nil, build_time_config), do: build_time_config
+  def relay_config(imported_config, _build_time_config), do: imported_config
+
+  # Import runs before any children start, so new settings apply on this boot.
+  if @target == :host do
+    defp imported_relay_config, do: nil
+  else
+    defp imported_relay_config do
+      _ = NervesPrinter.DeviceConfig.Import.run_on_device()
+      NervesPrinter.DeviceConfig.Import.load_relay()
+    end
   end
 
   @doc """

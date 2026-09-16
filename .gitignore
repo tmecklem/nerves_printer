@@ -16,3 +16,7 @@
 # If the VM crashes, it generates a dump, let's ignore it too.
 erl_crash.dump
 .envrc
+
+# Editor swap files can hold copies of ignored files like .envrc
+*.swp
+*.swo

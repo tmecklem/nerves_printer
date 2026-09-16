@@ -3,7 +3,7 @@ defmodule NervesPrinter.MixProject do
 
   @app :nerves_printer
   @version "0.1.0"
-  @all_targets [:custom_rpi3]
+  @all_targets [:printer_relay_rpi3]
 
   def project do
     [
@@ -14,6 +14,7 @@ defmodule NervesPrinter.MixProject do
       listeners: listeners(Mix.target(), Mix.env()),
       start_permanent: Mix.env() == :prod,
       deps: deps(),
+      aliases: aliases(),
       releases: [{@app, release()}]
     ]
   end
@@ -27,7 +28,10 @@ defmodule NervesPrinter.MixProject do
   end
 
   def cli do
-    [preferred_targets: [run: :host, test: :host]]
+    [
+      preferred_targets: [run: :host, test: :host, precommit: :host],
+      preferred_envs: [precommit: :test]
+    ]
   end
 
   # Run "mix help deps" to learn about dependencies.
@@ -51,9 +55,13 @@ defmodule NervesPrinter.MixProject do
       {:nerves_pack, "~> 0.7.1", targets: @all_targets},
 
       # Dependencies for specific targets
-      # nerves_system_rpi3 fork with CONFIG_USB_PRINTER=y (see PLAN.md). The
-      # system is built locally, so its artifact lives in ~/.nerves/artifacts.
-      {:custom_rpi3, path: "../custom_rpi3", runtime: false, targets: :custom_rpi3}
+      # nerves_system_rpi3 fork with CONFIG_USB_PRINTER=y (see PLAN.md). Its CI
+      # publishes the prebuilt system to the GitHub release for this tag.
+      {:printer_relay_rpi3,
+       github: "tmecklem/printer_relay_rpi3",
+       tag: "v2.1.2-usblp.1",
+       runtime: false,
+       targets: :printer_relay_rpi3}
     ]
   end
 
@@ -66,6 +74,17 @@ defmodule NervesPrinter.MixProject do
       include_erts: &Nerves.Release.erts/0,
       steps: [&Nerves.Release.init/1, :assemble],
       strip_beams: Mix.env() == :prod or [keep: ["Docs"]]
+    ]
+  end
+
+  defp aliases do
+    [
+      precommit: [
+        "format --check-formatted",
+        "compile --warnings-as-errors",
+        "test",
+        "cmd --cd printer_relay mix precommit"
+      ]
     ]
   end
 
