@@ -45,4 +45,18 @@ defmodule NervesPrinter.ApplicationTest do
                [{NervesPrinter.StatusLed, relay?: false}]
     end
   end
+
+  describe "relay_config/2" do
+    @build_time [uri: "ws://build/ws", token: "build"]
+    @imported [uri: "wss://imported/ws", token: "imported", printer_id: "shop-1"]
+
+    test "prefers settings imported onto the device" do
+      assert Application.relay_config(@imported, @build_time) == @imported
+    end
+
+    test "falls back to build-time settings" do
+      assert Application.relay_config(nil, @build_time) == @build_time
+      assert Application.relay_config(nil, []) == []
+    end
+  end
 end
