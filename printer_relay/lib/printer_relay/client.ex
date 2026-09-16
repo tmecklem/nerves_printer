@@ -14,6 +14,12 @@ if Code.ensure_loaded?(Slipstream) do
     `backend` implements `PrinterRelay.Client.Backend`. Any other options are
     passed to `Slipstream.connect/2`. The client reconnects and rejoins with
     backoff when the connection drops.
+
+    ## Telemetry
+
+    `[:printer_relay, :client, :connection]` is emitted with metadata
+    `%{status: :connected | :disconnected, printer_id: printer_id}` when the
+    client joins its printer channel and when it loses it.
     """
     use Slipstream, restart: :permanent
 
@@ -48,6 +54,7 @@ if Code.ensure_loaded?(Slipstream) do
         new_socket()
         |> assign(
           backend: backend,
+          printer_id: printer_id,
           topic: "printer_relay:printer:" <> printer_id,
           status: backend_module.subscribe(backend_arg)
         )
@@ -69,6 +76,7 @@ if Code.ensure_loaded?(Slipstream) do
     @impl Slipstream
     def handle_join(topic, _response, socket) do
       Logger.info("PrinterRelay: joined #{topic}")
+      emit_connection(socket, :connected)
       {:ok, socket}
     end
 
@@ -105,18 +113,28 @@ if Code.ensure_loaded?(Slipstream) do
     @impl Slipstream
     def handle_topic_close(topic, reason, socket) do
       Logger.warning("PrinterRelay: #{topic} closed: #{inspect(reason)}")
+      emit_connection(socket, :disconnected)
       rejoin(socket, topic, join_params(socket.assigns.status))
     end
 
     @impl Slipstream
     def handle_disconnect({:error, {:upgrade_failure, %{status_code: 403}}}, socket) do
       Logger.error("PrinterRelay: server rejected the connection (HTTP 403); check the token")
+      emit_connection(socket, :disconnected)
       reconnect(socket)
     end
 
     def handle_disconnect(reason, socket) do
       Logger.warning("PrinterRelay: disconnected: #{inspect(reason)}")
+      emit_connection(socket, :disconnected)
       reconnect(socket)
+    end
+
+    defp emit_connection(socket, status) do
+      :telemetry.execute([:printer_relay, :client, :connection], %{}, %{
+        status: status,
+        printer_id: socket.assigns.printer_id
+      })
     end
 
     defp join_params(status) do

@@ -91,6 +91,10 @@ children = [
 The client reconnects and rejoins with backoff, and sends status changes
 reported by the backend.
 
+It emits `[:printer_relay, :client, :connection]` telemetry with metadata
+`%{status: :connected | :disconnected, printer_id: id}` when it joins or loses
+the server, for example to drive a status LED.
+
 ## Testing your app
 
 `PrinterRelay.TestPrinter` registers a fake printer, so code that calls

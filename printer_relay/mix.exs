@@ -34,6 +34,7 @@ defmodule PrinterRelay.MixProject do
       # Client side: a device connecting a printer
       {:slipstream, "~> 1.2", optional: true},
       {:jason, "~> 1.4"},
+      {:telemetry, "~> 1.0"},
       {:bandit, "~> 1.5", only: :test},
       {:ex_doc, "~> 0.34", only: :dev, runtime: false}
     ]

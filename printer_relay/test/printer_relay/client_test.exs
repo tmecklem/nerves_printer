@@ -75,6 +75,38 @@ defmodule PrinterRelay.ClientTest do
     connect_and_assert_join(client, @topic, %{"online" => false}, :ok, 2_000)
   end
 
+  describe "connection telemetry" do
+    setup do
+      test_pid = self()
+      handler_id = {__MODULE__, make_ref()}
+
+      :ok =
+        :telemetry.attach(
+          handler_id,
+          [:printer_relay, :client, :connection],
+          fn event, measurements, metadata, _config ->
+            send(test_pid, {:telemetry, event, measurements, metadata})
+          end,
+          nil
+        )
+
+      on_exit(fn -> :telemetry.detach(handler_id) end)
+    end
+
+    test "reports :connected once joined and :disconnected when the connection drops" do
+      client = start_client()
+      refute_received {:telemetry, _, _, _}
+
+      connect_and_assert_join(client, @topic, _, :ok)
+
+      assert_receive {:telemetry, [:printer_relay, :client, :connection], %{},
+                      %{status: :connected, printer_id: "shop-1"}}
+
+      disconnect(client, :heartbeat_timeout)
+      assert_receive {:telemetry, _, _, %{status: :disconnected, printer_id: "shop-1"}}
+    end
+  end
+
   test "puts the token in the connect URI" do
     assert Client.connect_uri("ws://relay.test/printer_relay/websocket", "s3cr3t") ==
              "ws://relay.test/printer_relay/websocket?token=s3cr3t"
