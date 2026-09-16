@@ -30,6 +30,10 @@ jobs:
       - name: Install nerves_bootstrap
         run: mix archive.install hex nerves_bootstrap --force
 
+      # nerves_uevent's port needs libmnl on Linux hosts.
+      - name: Install native build dependencies
+        run: sudo apt-get update && sudo apt-get install -y libmnl-dev
+
       - uses: actions/cache@v6
         with:
           path: |
@@ -54,6 +58,11 @@ jobs:
     env:
       MIX_TARGET: printer_relay_rpi3
       MIX_ENV: prod
+      # No relay or WiFi settings are built in: each Pi reads them from
+      # printer_relay.conf on its SD card. SSH public keys come from the
+      # NERVES_SSH_AUTHORIZED_KEYS repository variable (or secret). Set for the
+      # whole job because any mix command here loads config/target.exs.
+      NERVES_SSH_AUTHORIZED_KEYS: ${{ vars.NERVES_SSH_AUTHORIZED_KEYS || secrets.NERVES_SSH_AUTHORIZED_KEYS }}
     steps:
       - uses: actions/checkout@v7
 
@@ -86,12 +95,7 @@ jobs:
       - name: Get dependencies
         run: mix deps.get
 
-      # No relay or WiFi settings are built in: each Pi reads them from
-      # printer_relay.conf on its SD card. SSH public keys come from the
-      # NERVES_SSH_AUTHORIZED_KEYS repository variable (or secret).
       - name: Build firmware
-        env:
-          NERVES_SSH_AUTHORIZED_KEYS: ${{ vars.NERVES_SSH_AUTHORIZED_KEYS || secrets.NERVES_SSH_AUTHORIZED_KEYS }}
         run: mix firmware
 
       - uses: actions/upload-artifact@v7
