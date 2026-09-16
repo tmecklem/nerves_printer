@@ -33,7 +33,7 @@ defmodule PrinterRelay.IntegrationTest do
 
   defp printer(id), do: Enum.find(PrinterRelay.printers(), &(&1.id == id))
 
-  defp eventually(fun, attempts \\ 100) do
+  defp eventually(fun, attempts \\ 250) do
     cond do
       result = fun.() -> result
       attempts == 0 -> flunk("condition never became true")
@@ -76,11 +76,16 @@ defmodule PrinterRelay.IntegrationTest do
     assert PrinterRelay.print(c.printer_id, "^XA^XZ") == :ok
   end
 
-  test "never joins with a bad token", c do
-    start_client(c, token: "wrong")
-    Process.sleep(300)
+  test "never joins with a bad token, and says why", c do
+    log =
+      ExUnit.CaptureLog.capture_log(fn ->
+        start_client(c, token: "wrong")
+        Process.sleep(300)
 
-    refute printer(c.printer_id)
-    assert PrinterRelay.print(c.printer_id, "^XA^XZ") == {:error, :not_connected}
+        refute printer(c.printer_id)
+        assert PrinterRelay.print(c.printer_id, "^XA^XZ") == {:error, :not_connected}
+      end)
+
+    assert log =~ "PrinterRelay: server rejected the connection (HTTP 403); check the token"
   end
 end

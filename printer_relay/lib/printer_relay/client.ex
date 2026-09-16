@@ -109,6 +109,11 @@ if Code.ensure_loaded?(Slipstream) do
     end
 
     @impl Slipstream
+    def handle_disconnect({:error, {:upgrade_failure, %{status_code: 403}}}, socket) do
+      Logger.error("PrinterRelay: server rejected the connection (HTTP 403); check the token")
+      reconnect(socket)
+    end
+
     def handle_disconnect(reason, socket) do
       Logger.warning("PrinterRelay: disconnected: #{inspect(reason)}")
       reconnect(socket)

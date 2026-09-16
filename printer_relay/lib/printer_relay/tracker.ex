@@ -4,6 +4,7 @@ if Code.ensure_loaded?(Phoenix.Tracker) do
     use Phoenix.Tracker
 
     @topic "printer_relay:printers"
+    @changes_topic "printer_relay:printers_changed"
 
     def start_link(pubsub) do
       Phoenix.Tracker.start_link(__MODULE__, [pubsub_server: pubsub],
@@ -19,6 +20,10 @@ if Code.ensure_loaded?(Phoenix.Tracker) do
 
     def update(pid, printer_id, changes) do
       Phoenix.Tracker.update(__MODULE__, pid, @topic, printer_id, &Map.merge(&1, changes))
+    end
+
+    def subscribe do
+      Phoenix.PubSub.subscribe(:persistent_term.get({__MODULE__, :pubsub}), @changes_topic)
     end
 
     def lookup(printer_id) do
@@ -42,9 +47,24 @@ if Code.ensure_loaded?(Phoenix.Tracker) do
     end
 
     @impl Phoenix.Tracker
-    def init(opts), do: {:ok, %{pubsub_server: Keyword.fetch!(opts, :pubsub_server)}}
+    def init(opts) do
+      pubsub = Keyword.fetch!(opts, :pubsub_server)
+      :persistent_term.put({__MODULE__, :pubsub}, pubsub)
+      {:ok, %{pubsub_server: pubsub}}
+    end
 
+    # Every node's tracker sees every diff, so each notifies only its own subscribers.
     @impl Phoenix.Tracker
-    def handle_diff(_diff, state), do: {:ok, state}
+    def handle_diff(diff, state) do
+      if Map.has_key?(diff, @topic) do
+        Phoenix.PubSub.local_broadcast(
+          state.pubsub_server,
+          @changes_topic,
+          {:printer_relay, :printers_changed}
+        )
+      end
+
+      {:ok, state}
+    end
   end
 end

@@ -73,6 +73,13 @@ if Code.ensure_loaded?(Phoenix.Tracker) do
     @spec printers() :: [printer()]
     def printers, do: Tracker.printers()
 
+    @doc """
+    Subscribes the caller to `{:printer_relay, :printers_changed}` messages,
+    sent whenever a printer connects, disconnects, or changes status on any node.
+    """
+    @spec subscribe() :: :ok | {:error, term()}
+    def subscribe, do: Tracker.subscribe()
+
     # The monitor doubles as a process alias, so replies that arrive after a
     # timeout are dropped instead of landing in the caller's mailbox.
     defp send_job(pid, zpl, timeout) do
