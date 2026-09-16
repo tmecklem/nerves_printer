@@ -1,0 +1,101 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+env:
+  OTP_VERSION: "29.0.5"
+  ELIXIR_VERSION: "1.20.3-otp-29"
+  FWUP_VERSION: "1.17.1"
+
+jobs:
+  test:
+    name: Tests (host)
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v7
+
+      - uses: erlef/setup-beam@v1
+        with:
+          otp-version: ${{ env.OTP_VERSION }}
+          elixir-version: ${{ env.ELIXIR_VERSION }}
+          version-type: strict
+
+      - name: Install nerves_bootstrap
+        run: mix archive.install hex nerves_bootstrap --force
+
+      - uses: actions/cache@v6
+        with:
+          path: |
+            deps
+            _build
+            printer_relay/deps
+            printer_relay/_build
+          key: test-${{ runner.os }}-${{ env.OTP_VERSION }}-${{ env.ELIXIR_VERSION }}-${{ hashFiles('mix.lock', 'printer_relay/mix.lock') }}
+          restore-keys: test-${{ runner.os }}-${{ env.OTP_VERSION }}-${{ env.ELIXIR_VERSION }}-
+
+      - name: Get dependencies
+        run: |
+          mix deps.get
+          (cd printer_relay && mix deps.get)
+
+      - name: mix precommit
+        run: mix precommit
+
+  firmware:
+    name: Firmware (printer_relay_rpi3)
+    runs-on: ubuntu-24.04
+    env:
+      MIX_TARGET: printer_relay_rpi3
+      MIX_ENV: prod
+    steps:
+      - uses: actions/checkout@v7
+
+      - uses: erlef/setup-beam@v1
+        with:
+          otp-version: ${{ env.OTP_VERSION }}
+          elixir-version: ${{ env.ELIXIR_VERSION }}
+          version-type: strict
+
+      - name: Install nerves_bootstrap
+        run: mix archive.install hex nerves_bootstrap --force
+
+      - name: Install fwup and squashfs-tools
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y squashfs-tools
+          curl -fsSL -o /tmp/fwup.deb "https://github.com/fwup-home/fwup/releases/download/v${FWUP_VERSION}/fwup_${FWUP_VERSION}_amd64.deb"
+          sudo apt-get install -y /tmp/fwup.deb
+
+      # The prebuilt system and toolchain are large downloads.
+      - uses: actions/cache@v6
+        with:
+          path: |
+            ~/.nerves/artifacts
+            deps
+            _build
+          key: firmware-${{ runner.os }}-${{ env.OTP_VERSION }}-${{ env.ELIXIR_VERSION }}-${{ hashFiles('mix.lock', 'printer_relay/mix.lock') }}
+          restore-keys: firmware-${{ runner.os }}-${{ env.OTP_VERSION }}-${{ env.ELIXIR_VERSION }}-
+
+      - name: Get dependencies
+        run: mix deps.get
+
+      # No relay or WiFi settings are built in: each Pi reads them from
+      # printer_relay.conf on its SD card. SSH public keys come from the
+      # NERVES_SSH_AUTHORIZED_KEYS repository variable (or secret).
+      - name: Build firmware
+        env:
+          NERVES_SSH_AUTHORIZED_KEYS: ${{ vars.NERVES_SSH_AUTHORIZED_KEYS || secrets.NERVES_SSH_AUTHORIZED_KEYS }}
+        run: mix firmware
+
+      - uses: actions/upload-artifact@v7
+        with:
+          name: nerves_printer-${{ github.sha }}
+          path: _build/printer_relay_rpi3_prod/nerves/images/nerves_printer.fw
+          if-no-files-found: error
