@@ -6,10 +6,13 @@ defmodule NervesPrinter.Printer do
   device node comes and goes. Jobs sent while the printer is detached are
   rejected with `{:error, :offline}` so the server can retry them.
 
-  Processes that call `subscribe/1` receive `{:printer_status, status}` on
-  every change.
+  Processes that call `subscribe/1` receive `{:printer_relay_status, status}`
+  on every change. It implements `PrinterRelay.Client.Backend` with the
+  server name as the backend argument.
   """
   use GenServer
+
+  @behaviour PrinterRelay.Client.Backend
 
   require Logger
 
@@ -26,13 +29,15 @@ defmodule NervesPrinter.Printer do
   @doc "Default device node, overridable with `config :nerves_printer, device_path: ...`."
   def device_path, do: Application.get_env(:nerves_printer, :device_path, @default_device_path)
 
+  @impl PrinterRelay.Client.Backend
   @spec print(GenServer.server(), iodata()) :: :ok | {:error, term()}
   def print(server \\ __MODULE__, zpl), do: GenServer.call(server, {:print, zpl}, @print_timeout)
 
   @spec status(GenServer.server()) :: status()
   def status(server \\ __MODULE__), do: GenServer.call(server, :status)
 
-  @doc "Subscribes the caller to `{:printer_status, status}` messages. Returns the current status."
+  @doc "Subscribes the caller to `{:printer_relay_status, status}` messages. Returns the current status."
+  @impl PrinterRelay.Client.Backend
   @spec subscribe(GenServer.server()) :: status()
   def subscribe(server \\ __MODULE__), do: GenServer.call(server, :subscribe)
 
@@ -129,7 +134,7 @@ defmodule NervesPrinter.Printer do
 
   defp notify(state) do
     status = public_status(state)
-    Enum.each(Map.keys(state.subscribers), &send(&1, {:printer_status, status}))
+    Enum.each(Map.keys(state.subscribers), &send(&1, {:printer_relay_status, status}))
     state
   end
 end

@@ -15,10 +15,10 @@ defmodule NervesPrinter.PrinterWatcherTest do
     )
 
     File.write!(device_path, "")
-    assert_receive {:printer_status, %{online: true}}
+    assert_receive {:printer_relay_status, %{online: true}}
 
     File.rm!(device_path)
-    assert_receive {:printer_status, %{online: false}}
+    assert_receive {:printer_relay_status, %{online: false}}
   end
 
   test "attaches immediately when the device is present at startup", %{tmp_dir: tmp_dir} do
@@ -29,6 +29,6 @@ defmodule NervesPrinter.PrinterWatcherTest do
 
     start_supervised!({PrinterWatcher, name: nil, printer: printer, device_path: device_path})
 
-    assert_receive {:printer_status, %{online: true}}
+    assert_receive {:printer_relay_status, %{online: true}}
   end
 end
